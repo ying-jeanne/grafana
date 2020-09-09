@@ -3,7 +3,7 @@ publish_image = 'grafana/grafana-ci-deploy:1.2.6'
 grafana_docker_image = 'grafana/drone-grafana-docker:0.2.0'
 alpine_image = 'alpine:3.12'
 windows_image = 'mcr.microsoft.com/windows:1809'
-grabpl_version = '0.5.7'
+grabpl_version = '0.5.8'
 
 def step(dct):
     # Should record step's start time, so when the step fails or succeeds we can publish the event to Graphite.
@@ -91,7 +91,8 @@ def master_pipelines(edition):
         codespell_step(),
         shellcheck_step(),
         test_backend_step(),
-        test_frontend_step(publish_metrics=True),
+        test_frontend_step(),
+        frontend_metrics_step(),
         build_backend_step(edition=edition),
         build_frontend_step(edition=edition),
         build_plugins_step(edition=edition),
@@ -362,13 +363,8 @@ def test_backend_step():
         ],
     }
 
-def test_frontend_step(publish_metrics=False):
-    cmds = [
-        'yarn run ci:test-frontend',
-    ]
-    if publish_metrics:
-        cmds.append('./scripts/ci-frontend-metrics.sh | ./bin/grabpl publish-metrics $${GRAFANA_MISC_STATS_API_KEY}')
-    dct = {
+def test_frontend_step():
+    return {
         'name': 'test-frontend',
         'image': build_image,
         'depends_on': [
@@ -377,16 +373,28 @@ def test_frontend_step(publish_metrics=False):
         'environment': {
             'TEST_MAX_WORKERS': '50%',
         },
-        'commands': cmds,
+        'commands': [
+            'yarn run ci:test-frontend',
+        ],
     }
-    if publish_metrics:
-        dct['environment'] = {
+
+def frontend_metrics_step():
+    return {
+        'name': 'frontend-metrics',
+        'image': build_image,
+        'depends_on': [
+            'initialize',
+        ],
+        'environment': {
             'GRAFANA_MISC_STATS_API_KEY': {
                 'from_secret': 'grafana_misc_stats_api_key',
             },
-        }
+        },
+        'commands': [
+            './scripts/ci-frontend-metrics.sh | ./bin/grabpl publish-metrics $${GRAFANA_MISC_STATS_API_KEY}',
+        ],
+    }
 
-    return dct
 
 def codespell_step():
     return {
