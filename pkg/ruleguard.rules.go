@@ -30,7 +30,6 @@ func unconvert(m fluent.Matcher) {
 	m.Match("time.Duration($x)").Where(m["x"].Type.Is("time.Duration") && !m["x"].Text.Matches("^[0-9]*$")).Report("unnecessary conversion").Suggest("$x")
 }
 
-/*
 // Don't use == or != with time.Time
 // https://github.com/dominikh/go-tools/issues/47 : Wontfix
 func timeeq(m fluent.Matcher) {
@@ -38,7 +37,6 @@ func timeeq(m fluent.Matcher) {
 	m.Match("$t0 != $t1").Where(m["t0"].Type.Is("time.Time")).Report("using != with time.Time")
 	m.Match(`map[$k]$v`).Where(m["k"].Type.Is("time.Time")).Report("map with time.Time keys are easy to misuse")
 }
-*/
 
 // Wrong err in error check
 func wrongerr(m fluent.Matcher) {
@@ -270,7 +268,6 @@ func oddmathbits(m fluent.Matcher) {
 	).Report("odd math/bits expression: use bits.Len*() instead?")
 }
 
-/*
 func floateq(m fluent.Matcher) {
 	m.Match(
 		"$x == $y",
@@ -295,7 +292,6 @@ func floateq(m fluent.Matcher) {
 		Report("floating point as switch expression")
 
 }
-*/
 
 func badexponent(m fluent.Matcher) {
 	m.Match(
@@ -305,7 +301,6 @@ func badexponent(m fluent.Matcher) {
 		Report("caret (^) is not exponentiation")
 }
 
-/*
 func floatloop(m fluent.Matcher) {
 	m.Match(
 		"for $i := $x; $i < $y; $i += $z { $*_ }",
@@ -321,7 +316,6 @@ func floatloop(m fluent.Matcher) {
 		Where(m["i"].Type.Is("float32")).
 		Report("floating point for loop counter")
 }
-*/
 
 func urlredacted(m fluent.Matcher) {
 
@@ -410,7 +404,6 @@ func nilerr(m fluent.Matcher) {
 
 }
 
-/*
 func mailaddress(m fluent.Matcher) {
 	m.Match(
 		"fmt.Sprintf(`\"%s\" <%s>`, $NAME, $EMAIL)",
@@ -425,7 +418,6 @@ func mailaddress(m fluent.Matcher) {
 		Report("use net/mail Address.String() instead of fmt.Sprintf()").
 		Suggest("(&mail.Address{Name:$NAME, Address:$EMAIL}).String()")
 }
-*/
 
 func errnetclosed(m fluent.Matcher) {
 	m.Match(
