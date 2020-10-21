@@ -39,6 +39,9 @@ enable = [
   "varcheck",
   "whitespace",
   "gocyclo",
+  "exhaustive",
+  "nestif",
+  "typecheck",
 ]
 
 # Disabled linters (might want them later)
