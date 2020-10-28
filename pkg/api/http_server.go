@@ -73,21 +73,12 @@ type HTTPServer struct {
 	PluginManager        *plugins.PluginManager           `inject:""`
 	SearchService        *search.SearchService            `inject:""`
 	ShortURLService      *shorturls.ShortURLService       `inject:""`
-	Live                 *live.GrafanaLive
+	Live                 *live.GrafanaLive                `inject:""`
 	Listener             net.Listener
 }
 
 func (hs *HTTPServer) Init() error {
 	hs.log = log.New("http.server")
-
-	// Set up a websocket broker
-	if hs.Cfg.IsLiveEnabled() { // feature flag
-		node, err := live.InitializeBroker()
-		if err != nil {
-			return err
-		}
-		hs.Live = node
-	}
 
 	hs.macaron = hs.newMacaron()
 	hs.registerRoutes()
