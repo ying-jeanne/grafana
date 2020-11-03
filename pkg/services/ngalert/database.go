@@ -7,7 +7,6 @@ import (
 )
 
 func (ng *AlertNG) registerBusHandlers() {
-	ng.Bus.AddHandler(ng.UpdateAlertDefinition)
 	ng.Bus.AddHandler(ng.GetAlertDefinitions)
 }
 
@@ -56,35 +55,6 @@ func (ng *AlertNG) getAlertDefinitionByID(id int64) (*AlertDefinition, error) {
 	}
 
 	return alertDefinition, nil
-}
-
-// UpdateAlertDefinition is a handler for updating an existing alert definition.
-// It returns models.ErrAlertDefinitionNotFound if no alert definition is found for the provided ID.
-func (ng *AlertNG) UpdateAlertDefinition(cmd *UpdateAlertDefinitionCommand) error {
-	return ng.SQLStore.WithTransactionalDbSession(context.Background(), func(sess *sqlstore.DBSession) error {
-		alertDefinition := &AlertDefinition{
-			Name:      cmd.Name,
-			Condition: cmd.Condition.RefID,
-			Data:      cmd.Condition.QueriesAndExpressions,
-		}
-
-		if err := ng.validateAlertDefinition(alertDefinition, cmd.SignedInUser, cmd.SkipCache); err != nil {
-			return err
-		}
-
-		if err := alertDefinition.preSave(); err != nil {
-			return err
-		}
-
-		affectedRows, err := sess.ID(cmd.ID).Update(alertDefinition)
-		if err != nil {
-			return err
-		}
-
-		cmd.Result = alertDefinition
-		cmd.RowsAffected = affectedRows
-		return nil
-	})
 }
 
 // GetAlertDefinitions is a handler for retrieving alert definitions of specific organisation.

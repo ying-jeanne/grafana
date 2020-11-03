@@ -141,15 +141,37 @@ func (ng *AlertNG) DeleteAlertDefinitionEndpoint(c *models.ReqContext) api.Respo
 
 // UpdateAlertDefinitionEndpoint handles PUT /api/alert-definitions/:alertDefinitionId.
 func (ng *AlertNG) UpdateAlertDefinitionEndpoint(c *models.ReqContext, cmd UpdateAlertDefinitionCommand) api.Response {
-	cmd.ID = c.ParamsInt64(":alertDefinitionId")
-	cmd.SignedInUser = c.SignedInUser
-	cmd.SkipCache = c.SkipCache
+	id := c.ParamsInt64(":alertDefinitionId")
 
-	if err := ng.Bus.Dispatch(&cmd); err != nil {
+	var affectedRows int64
+	err := ng.SQLStore.WithTransactionalDbSession(context.Background(), func(sess *sqlstore.DBSession) error {
+		alertDefinition := &AlertDefinition{
+			Name:      cmd.Name,
+			Condition: cmd.Condition.RefID,
+			Data:      cmd.Condition.QueriesAndExpressions,
+		}
+
+		if err := ng.validateAlertDefinition(alertDefinition, c.SignedInUser, c.SkipCache); err != nil {
+			return err
+		}
+
+		if err := alertDefinition.preSave(); err != nil {
+			return err
+		}
+
+		var err error
+		affectedRows, err = sess.ID(id).Update(alertDefinition)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
 		return api.Error(500, "Failed to update alert definition", err)
 	}
 
-	return api.JSON(200, util.DynMap{"affectedRows": cmd.RowsAffected, "id": cmd.Result.Id})
+	return api.JSON(200, util.DynMap{"affectedRows": affectedRows, "id": id})
 }
 
 // CreateAlertDefinitionEndpoint handles POST /api/alert-definitions.
