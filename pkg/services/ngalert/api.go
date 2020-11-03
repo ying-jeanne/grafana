@@ -20,7 +20,7 @@ import (
 func (ng *AlertNG) registerAPIEndpoints() {
 	ng.RouteRegister.Group("/api/alert-definitions", func(alertDefinitions routing.RouteRegister) {
 		alertDefinitions.Get("", middleware.ReqSignedIn, api.Wrap(ng.listAlertDefinitions))
-		alertDefinitions.Get("/eval/:alertDefinitionId", ng.validateOrgAlertDefinition, api.Wrap(ng.AlertDefinitionEval))
+		alertDefinitions.Get("/eval/:alertDefinitionId", ng.validateOrgAlertDefinition, api.Wrap(ng.alertDefinitionEval))
 		alertDefinitions.Post("/eval", middleware.ReqSignedIn, binding.Bind(evalAlertConditionCommand{}), api.Wrap(ng.conditionEval))
 		alertDefinitions.Get("/:alertDefinitionId", ng.validateOrgAlertDefinition, api.Wrap(ng.getAlertDefinitionEndpoint))
 		alertDefinitions.Delete("/:alertDefinitionId", ng.validateOrgAlertDefinition, api.Wrap(ng.deleteAlertDefinitionEndpoint))
@@ -68,8 +68,8 @@ func (ng *AlertNG) conditionEval(c *models.ReqContext, dto evalAlertConditionCom
 	})
 }
 
-// §AlertDefinitionEval handles GET /api/alert-definitions/eval/:dashboardId/:panelId/:refId".
-func (ng *AlertNG) AlertDefinitionEval(c *models.ReqContext) api.Response {
+// alertDefinitionEval handles GET /api/alert-definitions/eval/:dashboardId/:panelId/:refId".
+func (ng *AlertNG) alertDefinitionEval(c *models.ReqContext) api.Response {
 	alertDefinitionID := c.ParamsInt64(":alertDefinitionId")
 
 	fromStr := c.Query("from")
