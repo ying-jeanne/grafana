@@ -6,7 +6,6 @@ import (
 	"github.com/grafana/grafana/pkg/services/ngalert/eval"
 
 	"github.com/grafana/grafana/pkg/api/routing"
-	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/infra/log"
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/registry"
@@ -18,7 +17,6 @@ import (
 
 // AlertNG is the service for evaluating the condition of an alert definition.
 type AlertNG struct {
-	Bus             bus.Bus                  `inject:""`
 	Cfg             *setting.Cfg             `inject:""`
 	DatasourceCache datasources.CacheService `inject:""`
 	RouteRegister   routing.RouteRegister    `inject:""`
@@ -86,7 +84,7 @@ func (ng *AlertNG) LoadAlertCondition(alertDefinitionID int64, signedInUser *mod
 		return nil, err
 	}
 
-	condition, err := alertDefinition.GetEvalCondition(time.Now())
+	condition, err := alertDefinition.getEvalCondition(time.Now())
 	if err != nil {
 		return nil, err
 	}

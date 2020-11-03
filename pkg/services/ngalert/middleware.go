@@ -10,6 +10,7 @@ func (ng *AlertNG) validateOrgAlertDefinition(c *models.ReqContext) {
 	if err != nil {
 		// TODO: Distinguish between errors
 		c.JsonApiErr(404, "Alert definition not found", nil)
+		return
 	}
 
 	if c.OrgId != alertDefinition.OrgId {

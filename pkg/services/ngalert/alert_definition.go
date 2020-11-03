@@ -8,9 +8,9 @@ import (
 	"github.com/grafana/grafana/pkg/services/ngalert/eval"
 )
 
-// GetEvalCondition returns a condition suitable for execution
+// getEvalCondition returns a condition suitable for execution
 // based on the saved AlertDefinition.
-func (alertDefinition *AlertDefinition) GetEvalCondition(now time.Time) (*eval.Condition, error) {
+func (alertDefinition *AlertDefinition) getEvalCondition(now time.Time) (*eval.Condition, error) {
 	condition := &eval.Condition{
 		RefID: alertDefinition.Condition,
 	}

@@ -13,7 +13,7 @@ import (
 func TestAlertQuery(t *testing.T) {
 	testCases := []struct {
 		desc                 string
-		alertQuery           AlertQuery
+		alertQuery           alertQuery
 		expectedIsExpression bool
 		expectedDatasource   string
 		expectedDatasourceID int64
@@ -23,7 +23,7 @@ func TestAlertQuery(t *testing.T) {
 	}{
 		{
 			desc: "given an expression query",
-			alertQuery: AlertQuery{
+			alertQuery: alertQuery{
 				RefID: "A",
 				Model: json.RawMessage(`{
 					"datasource": "__expr__",
@@ -39,7 +39,7 @@ func TestAlertQuery(t *testing.T) {
 		},
 		{
 			desc: "given a query",
-			alertQuery: AlertQuery{
+			alertQuery: alertQuery{
 				RefID: "A",
 				Model: json.RawMessage(`{
 					"datasource": "my datasource",
@@ -56,7 +56,7 @@ func TestAlertQuery(t *testing.T) {
 		},
 		{
 			desc: "given a query with valid maxDataPoints",
-			alertQuery: AlertQuery{
+			alertQuery: alertQuery{
 				RefID: "A",
 				Model: json.RawMessage(`{
 					"datasource": "my datasource",
@@ -74,7 +74,7 @@ func TestAlertQuery(t *testing.T) {
 		},
 		{
 			desc: "given a query with invalid maxDataPoints",
-			alertQuery: AlertQuery{
+			alertQuery: alertQuery{
 				RefID: "A",
 				Model: json.RawMessage(`{
 					"datasource": "my datasource",
@@ -92,7 +92,7 @@ func TestAlertQuery(t *testing.T) {
 		},
 		{
 			desc: "given a query with zero maxDataPoints",
-			alertQuery: AlertQuery{
+			alertQuery: alertQuery{
 				RefID: "A",
 				Model: json.RawMessage(`{
 					"datasource": "my datasource",
@@ -110,7 +110,7 @@ func TestAlertQuery(t *testing.T) {
 		},
 		{
 			desc: "given a query with valid intervalMs",
-			alertQuery: AlertQuery{
+			alertQuery: alertQuery{
 				RefID: "A",
 				Model: json.RawMessage(`{
 					"datasource": "my datasource",
@@ -128,14 +128,14 @@ func TestAlertQuery(t *testing.T) {
 		},
 		{
 			desc: "given a query with invalid intervalMs",
-			alertQuery: AlertQuery{
+			alertQuery: alertQuery{
 				RefID: "A",
 				Model: json.RawMessage(`{
 					"datasource": "my datasource",
 					"datasourceId": 1,
 					"queryType": "metricQuery",
 					"intervalMs": "invalid",
-					"extraParam": "some text"	
+					"extraParam": "some text"
 				}`),
 			},
 			expectedIsExpression: false,
@@ -146,7 +146,7 @@ func TestAlertQuery(t *testing.T) {
 		},
 		{
 			desc: "given a query with invalid intervalMs",
-			alertQuery: AlertQuery{
+			alertQuery: alertQuery{
 				RefID: "A",
 				Model: json.RawMessage(`{
 					"datasource": "my datasource",
@@ -285,7 +285,7 @@ func TestAlertQueryMarshalling(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		var aq AlertQuery
+		var aq alertQuery
 		err := json.Unmarshal([]byte(tc.blob), &aq)
 		require.Equal(t, tc.err, err)
 		if tc.err == nil {

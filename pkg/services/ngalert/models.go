@@ -13,7 +13,7 @@ type AlertDefinition struct {
 	OrgId     int64
 	Name      string
 	Condition string
-	Data      []AlertQuery
+	Data      []alertQuery
 }
 
 var (
@@ -21,17 +21,17 @@ var (
 	ErrAlertDefinitionNotFound = fmt.Errorf("could not find alert definition")
 )
 
-// Condition is the structure used by storing/updating alert definition commmands
-type Condition struct {
+// condition is the structure used by storing/updating alert definition commmands
+type condition struct {
 	RefID string `json:"refId"`
 
-	QueriesAndExpressions []AlertQuery `json:"queriesAndExpressions"`
+	QueriesAndExpressions []alertQuery `json:"queriesAndExpressions"`
 }
 
 // SaveAlertDefinitionCommand contains parameters for saving a new alert definition.
 type SaveAlertDefinitionCommand struct {
 	Name      string    `json:"name"`
-	Condition Condition `json:"condition"`
+	Condition condition `json:"condition"`
 }
 
 // IsValid validates a SaveAlertDefinitionCommand.
@@ -40,19 +40,19 @@ func (cmd *SaveAlertDefinitionCommand) IsValid() bool {
 	return true
 }
 
-// UpdateAlertDefinitionCommand contains parameters for updating an existing alert definition.
-type UpdateAlertDefinitionCommand struct {
+// updateAlertDefinitionCommand contains parameters for updating an existing alert definition.
+type updateAlertDefinitionCommand struct {
 	Name      string    `json:"name"`
-	Condition Condition `json:"condition"`
+	Condition condition `json:"condition"`
 }
 
-// IsValid validates an UpdateAlertDefinitionCommand.
+// IsValid validates an updateAlertDefinitionCommand.
 // Always returns true.
-func (cmd *UpdateAlertDefinitionCommand) IsValid() bool {
+func (cmd *updateAlertDefinitionCommand) IsValid() bool {
 	return true
 }
 
-type EvalAlertConditionCommand struct {
+type evalAlertConditionCommand struct {
 	Condition eval.Condition `json:"condition"`
 	Now       time.Time      `json:"now"`
 }

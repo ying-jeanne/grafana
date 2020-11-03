@@ -32,27 +32,27 @@ func (d *duration) UnmarshalJSON(b []byte) error {
 	}
 }
 
-// RelativeTimeRange is the per query start and end time
+// relativeTimeRange is the per query start and end time
 // for requests.
-type RelativeTimeRange struct {
+type relativeTimeRange struct {
 	From duration
 	To   duration
 }
 
 // IsValid checks that From duration is greater than To duration.
-func (rtr *RelativeTimeRange) IsValid() bool {
+func (rtr *relativeTimeRange) IsValid() bool {
 	return rtr.From > rtr.To
 }
 
-func (rtr *RelativeTimeRange) toTimeRange(now time.Time) backend.TimeRange {
+func (rtr *relativeTimeRange) toTimeRange(now time.Time) backend.TimeRange {
 	return backend.TimeRange{
 		From: now.Add(-time.Duration(rtr.From)),
 		To:   now.Add(-time.Duration(rtr.To)),
 	}
 }
 
-// AlertQuery represents a single query associated with an alert definition.
-type AlertQuery struct {
+// alertQuery represents a single query associated with an alert definition.
+type alertQuery struct {
 	// RefID is the unique identifier of the query, set by the frontend call.
 	RefID string `json:"refId"`
 
@@ -61,7 +61,7 @@ type AlertQuery struct {
 	QueryType string `json:"queryType"`
 
 	// RelativeTimeRange is the relative Start and End of the query as sent by the frontend.
-	RelativeTimeRange RelativeTimeRange `json:"relativeTimeRange"`
+	RelativeTimeRange relativeTimeRange `json:"relativeTimeRange"`
 
 	DatasourceID int64 `json:"-"`
 
@@ -71,7 +71,7 @@ type AlertQuery struct {
 	modelProps map[string]interface{} `json:"-"`
 }
 
-func (aq *AlertQuery) setModelProps() error {
+func (aq *alertQuery) setModelProps() error {
 	aq.modelProps = make(map[string]interface{})
 	err := json.Unmarshal(aq.Model, &aq.modelProps)
 	if err != nil {
@@ -81,7 +81,7 @@ func (aq *AlertQuery) setModelProps() error {
 	return nil
 }
 
-func (aq *AlertQuery) setDatasource() error {
+func (aq *alertQuery) setDatasource() error {
 	if aq.modelProps == nil {
 		err := aq.setModelProps()
 		if err != nil {
@@ -113,7 +113,7 @@ func (aq *AlertQuery) setDatasource() error {
 }
 
 // IsExpression returns true if the alert query is an expression.
-func (aq *AlertQuery) IsExpression() (bool, error) {
+func (aq *alertQuery) IsExpression() (bool, error) {
 	err := aq.setDatasource()
 	if err != nil {
 		return false, err
@@ -122,7 +122,7 @@ func (aq *AlertQuery) IsExpression() (bool, error) {
 }
 
 // setMaxDatapoints sets the model maxDataPoints if it's missing or invalid
-func (aq *AlertQuery) setMaxDatapoints() error {
+func (aq *alertQuery) setMaxDatapoints() error {
 	if aq.modelProps == nil {
 		err := aq.setModelProps()
 		if err != nil {
@@ -140,7 +140,7 @@ func (aq *AlertQuery) setMaxDatapoints() error {
 	return nil
 }
 
-func (aq *AlertQuery) getMaxDatapoints() (int64, error) {
+func (aq *alertQuery) getMaxDatapoints() (int64, error) {
 	err := aq.setMaxDatapoints()
 	if err != nil {
 		return 0, err
@@ -154,7 +154,7 @@ func (aq *AlertQuery) getMaxDatapoints() (int64, error) {
 }
 
 // setIntervalMS sets the model IntervalMs if it's missing or invalid
-func (aq *AlertQuery) setIntervalMS() error {
+func (aq *alertQuery) setIntervalMS() error {
 	if aq.modelProps == nil {
 		err := aq.setModelProps()
 		if err != nil {
@@ -172,7 +172,7 @@ func (aq *AlertQuery) setIntervalMS() error {
 	return nil
 }
 
-func (aq *AlertQuery) getIntervalMS() (int64, error) {
+func (aq *alertQuery) getIntervalMS() (int64, error) {
 	err := aq.setIntervalMS()
 	if err != nil {
 		return 0, err
@@ -185,7 +185,7 @@ func (aq *AlertQuery) getIntervalMS() (int64, error) {
 	return int64(intervalMs), nil
 }
 
-func (aq *AlertQuery) getDatasource() (int64, error) {
+func (aq *alertQuery) getDatasource() (int64, error) {
 	err := aq.setDatasource()
 	if err != nil {
 		return 0, err
@@ -193,7 +193,7 @@ func (aq *AlertQuery) getDatasource() (int64, error) {
 	return aq.DatasourceID, nil
 }
 
-func (aq *AlertQuery) getModel() ([]byte, error) {
+func (aq *alertQuery) getModel() ([]byte, error) {
 	err := aq.setDatasource()
 	if err != nil {
 		return nil, err
@@ -216,7 +216,7 @@ func (aq *AlertQuery) getModel() ([]byte, error) {
 	return model, nil
 }
 
-func (aq *AlertQuery) setOrgID(orgID int64) error {
+func (aq *alertQuery) setOrgID(orgID int64) error {
 	if aq.modelProps == nil {
 		err := aq.setModelProps()
 		if err != nil {
@@ -228,7 +228,7 @@ func (aq *AlertQuery) setOrgID(orgID int64) error {
 	return nil
 }
 
-func (aq *AlertQuery) setQueryType() error {
+func (aq *alertQuery) setQueryType() error {
 	if aq.modelProps == nil {
 		err := aq.setModelProps()
 		if err != nil {
