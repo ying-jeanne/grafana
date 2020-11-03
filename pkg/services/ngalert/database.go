@@ -52,17 +52,3 @@ func (ng *AlertNG) getAlertDefinitionByID(id int64) (*AlertDefinition, error) {
 
 	return alertDefinition, nil
 }
-
-// GetAlertDefinitions is a handler for retrieving alert definitions of specific organisation.
-func (ng *AlertNG) GetAlertDefinitions(cmd *ListAlertDefinitionsCommand) error {
-	return ng.SQLStore.WithTransactionalDbSession(context.Background(), func(sess *sqlstore.DBSession) error {
-		alertDefinitions := make([]*AlertDefinition, 0)
-		q := "SELECT * FROM alert_definition WHERE org_id = ?"
-		if err := sess.SQL(q, cmd.OrgID).Find(&alertDefinitions); err != nil {
-			return err
-		}
-
-		cmd.Result = alertDefinitions
-		return nil
-	})
-}

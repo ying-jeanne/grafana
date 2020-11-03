@@ -208,11 +208,18 @@ func (ng *AlertNG) CreateAlertDefinitionEndpoint(c *models.ReqContext, cmd SaveA
 
 // ListAlertDefinitions handles GET /api/alert-definitions.
 func (ng *AlertNG) ListAlertDefinitions(c *models.ReqContext) api.Response {
-	cmd := ListAlertDefinitionsCommand{OrgID: c.SignedInUser.OrgId}
+	alertDefinitions := make([]*AlertDefinition, 0)
+	err := ng.SQLStore.WithTransactionalDbSession(context.Background(), func(sess *sqlstore.DBSession) error {
+		q := "SELECT * FROM alert_definition WHERE org_id = ?"
+		if err := sess.SQL(q, c.SignedInUser.OrgId).Find(&alertDefinitions); err != nil {
+			return err
+		}
 
-	if err := ng.Bus.Dispatch(&cmd); err != nil {
+		return nil
+	})
+	if err != nil {
 		return api.Error(500, "Failed to list alert definitions", err)
 	}
 
-	return api.JSON(200, util.DynMap{"results": cmd.Result})
+	return api.JSON(200, util.DynMap{"results": alertDefinitions})
 }

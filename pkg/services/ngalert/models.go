@@ -56,9 +56,3 @@ type EvalAlertConditionCommand struct {
 	Condition eval.Condition `json:"condition"`
 	Now       time.Time      `json:"now"`
 }
-
-type ListAlertDefinitionsCommand struct {
-	OrgID int64 `json:"-"`
-
-	Result []*AlertDefinition
-}
