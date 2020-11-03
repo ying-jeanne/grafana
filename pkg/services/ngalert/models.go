@@ -22,13 +22,6 @@ var (
 	ErrAlertDefinitionNotFound = fmt.Errorf("could not find alert definition")
 )
 
-type DeleteAlertDefinitionByIDQuery struct {
-	ID    int64
-	OrgID int64
-
-	RowsAffected int64
-}
-
 // Condition is the structure used by storing/updating alert definition commmands
 type Condition struct {
 	RefID string `json:"refId"`

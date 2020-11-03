@@ -7,7 +7,6 @@ import (
 )
 
 func (ng *AlertNG) registerBusHandlers() {
-	ng.Bus.AddHandler(ng.DeleteAlertDefinitionByID)
 	ng.Bus.AddHandler(ng.SaveAlertDefinition)
 	ng.Bus.AddHandler(ng.UpdateAlertDefinition)
 	ng.Bus.AddHandler(ng.GetAlertDefinitions)
@@ -25,22 +24,24 @@ func getAlertDefinitionByID(alertDefinitionID int64, sess *sqlstore.DBSession) (
 	return &alertDefinition, nil
 }
 
-// DeleteAlertDefinitionByID is a handler for deleting an alert definition.
+// deleteAlertDefinitionByID deletes an alert definition.
 // It returns models.ErrAlertDefinitionNotFound if no alert definition is found for the provided ID.
-func (ng *AlertNG) DeleteAlertDefinitionByID(query *DeleteAlertDefinitionByIDQuery) error {
-	return ng.SQLStore.WithTransactionalDbSession(context.Background(), func(sess *sqlstore.DBSession) error {
-		res, err := sess.Exec("DELETE FROM alert_definition WHERE id = ?", query.ID)
+func (ng *AlertNG) deleteAlertDefinitionByID(id int64) (int64, error) {
+	var rowsAffected int64
+	err := ng.SQLStore.WithTransactionalDbSession(context.Background(), func(sess *sqlstore.DBSession) error {
+		res, err := sess.Exec("DELETE FROM alert_definition WHERE id = ?", id)
 		if err != nil {
 			return err
 		}
 
-		rowsAffected, err := res.RowsAffected()
+		rowsAffected, err = res.RowsAffected()
 		if err != nil {
 			return err
 		}
-		query.RowsAffected = rowsAffected
 		return nil
 	})
+
+	return rowsAffected, err
 }
 
 // getAlertDefinitionByID gets an alert definition from the database by its ID.

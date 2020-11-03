@@ -130,16 +130,12 @@ func (ng *AlertNG) GetAlertDefinitionEndpoint(c *models.ReqContext) api.Response
 func (ng *AlertNG) DeleteAlertDefinitionEndpoint(c *models.ReqContext) api.Response {
 	alertDefinitionID := c.ParamsInt64(":alertDefinitionId")
 
-	query := DeleteAlertDefinitionByIDQuery{
-		ID:    alertDefinitionID,
-		OrgID: c.SignedInUser.OrgId,
-	}
-
-	if err := ng.Bus.Dispatch(&query); err != nil {
+	rowsAffected, err := ng.deleteAlertDefinitionByID(alertDefinitionID)
+	if err != nil {
 		return api.Error(500, "Failed to delete alert definition", err)
 	}
 
-	return api.JSON(200, util.DynMap{"affectedRows": query.RowsAffected})
+	return api.JSON(200, util.DynMap{"affectedRows": rowsAffected})
 }
 
 // UpdateAlertDefinitionEndpoint handles PUT /api/alert-definitions/:alertDefinitionId.
