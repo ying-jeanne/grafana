@@ -78,14 +78,12 @@ func (ng *AlertNG) AddMigration(mg *migrator.Migrator) {
 
 // LoadAlertCondition returns a Condition object for the given alertDefinitionID.
 func (ng *AlertNG) LoadAlertCondition(alertDefinitionID int64, signedInUser *models.SignedInUser, skipCache bool) (*eval.Condition, error) {
-	getAlertDefinitionByIDQuery := GetAlertDefinitionByIDQuery{ID: alertDefinitionID}
-	if err := bus.Dispatch(&getAlertDefinitionByIDQuery); err != nil {
+	alertDefinition, err := ng.getAlertDefinitionByID(alertDefinitionID)
+	if err != nil {
 		return nil, err
 	}
-	alertDefinition := getAlertDefinitionByIDQuery.Result
 
-	err := ng.validateAlertDefinition(alertDefinition, signedInUser, skipCache)
-	if err != nil {
+	if err := ng.validateAlertDefinition(alertDefinition, signedInUser, skipCache); err != nil {
 		return nil, err
 	}
 

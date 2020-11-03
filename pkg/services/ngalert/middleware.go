@@ -1,20 +1,18 @@
 package ngalert
 
 import (
-	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/models"
 )
 
-func validateOrgAlertDefinition(c *models.ReqContext) {
+func (ng *AlertNG) validateOrgAlertDefinition(c *models.ReqContext) {
 	id := c.ParamsInt64(":alertDefinitionId")
-	query := GetAlertDefinitionByIDQuery{ID: id}
-
-	if err := bus.Dispatch(&query); err != nil {
+	alertDefinition, err := ng.getAlertDefinitionByID(id)
+	if err != nil {
+		// TODO: Distinguish between errors
 		c.JsonApiErr(404, "Alert definition not found", nil)
-		return
 	}
 
-	if c.OrgId != query.Result.OrgId {
+	if c.OrgId != alertDefinition.OrgId {
 		c.JsonApiErr(403, "You are not allowed to edit/view alert definition", nil)
 		return
 	}

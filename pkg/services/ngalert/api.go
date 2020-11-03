@@ -19,12 +19,12 @@ import (
 func (ng *AlertNG) registerAPIEndpoints() {
 	ng.RouteRegister.Group("/api/alert-definitions", func(alertDefinitions routing.RouteRegister) {
 		alertDefinitions.Get("", middleware.ReqSignedIn, api.Wrap(ng.ListAlertDefinitions))
-		alertDefinitions.Get("/eval/:alertDefinitionId", validateOrgAlertDefinition, api.Wrap(ng.AlertDefinitionEval))
+		alertDefinitions.Get("/eval/:alertDefinitionId", ng.validateOrgAlertDefinition, api.Wrap(ng.AlertDefinitionEval))
 		alertDefinitions.Post("/eval", middleware.ReqSignedIn, binding.Bind(EvalAlertConditionCommand{}), api.Wrap(ng.ConditionEval))
-		alertDefinitions.Get("/:alertDefinitionId", validateOrgAlertDefinition, api.Wrap(ng.GetAlertDefinitionEndpoint))
-		alertDefinitions.Delete("/:alertDefinitionId", validateOrgAlertDefinition, api.Wrap(ng.DeleteAlertDefinitionEndpoint))
+		alertDefinitions.Get("/:alertDefinitionId", ng.validateOrgAlertDefinition, api.Wrap(ng.GetAlertDefinitionEndpoint))
+		alertDefinitions.Delete("/:alertDefinitionId", ng.validateOrgAlertDefinition, api.Wrap(ng.DeleteAlertDefinitionEndpoint))
 		alertDefinitions.Post("/", middleware.ReqSignedIn, binding.Bind(SaveAlertDefinitionCommand{}), api.Wrap(ng.CreateAlertDefinitionEndpoint))
-		alertDefinitions.Put("/:alertDefinitionId", validateOrgAlertDefinition, binding.Bind(UpdateAlertDefinitionCommand{}), api.Wrap(ng.UpdateAlertDefinitionEndpoint))
+		alertDefinitions.Put("/:alertDefinitionId", ng.validateOrgAlertDefinition, binding.Bind(UpdateAlertDefinitionCommand{}), api.Wrap(ng.UpdateAlertDefinitionEndpoint))
 	})
 }
 
@@ -116,17 +116,14 @@ func (ng *AlertNG) AlertDefinitionEval(c *models.ReqContext) api.Response {
 
 // GetAlertDefinitionEndpoint handles GET /api/alert-definitions/:alertDefinitionId.
 func (ng *AlertNG) GetAlertDefinitionEndpoint(c *models.ReqContext) api.Response {
-	alertDefinitionID := c.ParamsInt64(":alertDefinitionId")
+	id := c.ParamsInt64(":alertDefinitionId")
 
-	query := GetAlertDefinitionByIDQuery{
-		ID: alertDefinitionID,
-	}
-
-	if err := ng.Bus.Dispatch(&query); err != nil {
+	alertDefinition, err := ng.getAlertDefinitionByID(id)
+	if err != nil {
 		return api.Error(500, "Failed to get alert definition", err)
 	}
 
-	return api.JSON(200, &query.Result)
+	return api.JSON(200, alertDefinition)
 }
 
 // DeleteAlertDefinitionEndpoint handles DELETE /api/alert-definitions/:alertDefinitionId.

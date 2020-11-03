@@ -22,14 +22,6 @@ var (
 	ErrAlertDefinitionNotFound = fmt.Errorf("could not find alert definition")
 )
 
-// GetAlertDefinitionByIDQuery is the query for retrieving/deleting an alert definition by ID.
-type GetAlertDefinitionByIDQuery struct {
-	ID    int64
-	OrgID int64
-
-	Result *AlertDefinition
-}
-
 type DeleteAlertDefinitionByIDQuery struct {
 	ID    int64
 	OrgID int64
