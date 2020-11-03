@@ -7,7 +7,6 @@ import (
 )
 
 func (ng *AlertNG) registerBusHandlers() {
-	ng.Bus.AddHandler(ng.SaveAlertDefinition)
 	ng.Bus.AddHandler(ng.UpdateAlertDefinition)
 	ng.Bus.AddHandler(ng.GetAlertDefinitions)
 }
@@ -57,33 +56,6 @@ func (ng *AlertNG) getAlertDefinitionByID(id int64) (*AlertDefinition, error) {
 	}
 
 	return alertDefinition, nil
-}
-
-// SaveAlertDefinition is a handler for saving a new alert definition.
-func (ng *AlertNG) SaveAlertDefinition(cmd *SaveAlertDefinitionCommand) error {
-	return ng.SQLStore.WithTransactionalDbSession(context.Background(), func(sess *sqlstore.DBSession) error {
-		alertDefinition := &AlertDefinition{
-			OrgId:     cmd.OrgID,
-			Name:      cmd.Name,
-			Condition: cmd.Condition.RefID,
-			Data:      cmd.Condition.QueriesAndExpressions,
-		}
-
-		if err := ng.validateAlertDefinition(alertDefinition, cmd.SignedInUser, cmd.SkipCache); err != nil {
-			return err
-		}
-
-		if err := alertDefinition.preSave(); err != nil {
-			return err
-		}
-
-		if _, err := sess.Insert(alertDefinition); err != nil {
-			return err
-		}
-
-		cmd.Result = alertDefinition
-		return nil
-	})
 }
 
 // UpdateAlertDefinition is a handler for updating an existing alert definition.

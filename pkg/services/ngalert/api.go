@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/grafana/grafana/pkg/services/ngalert/eval"
+	"github.com/grafana/grafana/pkg/services/sqlstore"
 
 	"github.com/go-macaron/binding"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -153,15 +154,34 @@ func (ng *AlertNG) UpdateAlertDefinitionEndpoint(c *models.ReqContext, cmd Updat
 
 // CreateAlertDefinitionEndpoint handles POST /api/alert-definitions.
 func (ng *AlertNG) CreateAlertDefinitionEndpoint(c *models.ReqContext, cmd SaveAlertDefinitionCommand) api.Response {
-	cmd.OrgID = c.SignedInUser.OrgId
-	cmd.SignedInUser = c.SignedInUser
-	cmd.SkipCache = c.SkipCache
+	var alertDefinition *AlertDefinition
+	err := ng.SQLStore.WithTransactionalDbSession(context.Background(), func(sess *sqlstore.DBSession) error {
+		alertDefinition := &AlertDefinition{
+			OrgId:     c.SignedInUser.OrgId,
+			Name:      cmd.Name,
+			Condition: cmd.Condition.RefID,
+			Data:      cmd.Condition.QueriesAndExpressions,
+		}
 
-	if err := ng.Bus.Dispatch(&cmd); err != nil {
+		if err := ng.validateAlertDefinition(alertDefinition, c.SignedInUser, c.SkipCache); err != nil {
+			return err
+		}
+
+		if err := alertDefinition.preSave(); err != nil {
+			return err
+		}
+
+		if _, err := sess.Insert(alertDefinition); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
 		return api.Error(500, "Failed to create alert definition", err)
 	}
 
-	return api.JSON(200, util.DynMap{"id": cmd.Result.Id})
+	return api.JSON(200, util.DynMap{"id": alertDefinition.Id})
 }
 
 // ListAlertDefinitions handles GET /api/alert-definitions.

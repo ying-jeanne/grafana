@@ -29,15 +29,10 @@ type Condition struct {
 	QueriesAndExpressions []AlertQuery `json:"queriesAndExpressions"`
 }
 
-// SaveAlertDefinitionCommand is the query for saving a new alert definition.
+// SaveAlertDefinitionCommand contains parameters for saving a new alert definition.
 type SaveAlertDefinitionCommand struct {
-	Name         string               `json:"name"`
-	OrgID        int64                `json:"-"`
-	Condition    Condition            `json:"condition"`
-	SignedInUser *models.SignedInUser `json:"-"`
-	SkipCache    bool                 `json:"-"`
-
-	Result *AlertDefinition
+	Name      string    `json:"name"`
+	Condition Condition `json:"condition"`
 }
 
 // IsValid validates a SaveAlertDefinitionCommand.
