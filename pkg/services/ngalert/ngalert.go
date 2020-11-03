@@ -73,8 +73,8 @@ func (ng *AlertNG) AddMigration(mg *migrator.Migrator) {
 	mg.AddMigration("add index alert_definition org_id", migrator.NewAddIndexMigration(alertDefinition, alertDefinition.Indices[0]))
 }
 
-// LoadAlertCondition returns a Condition object for the given alertDefinitionID.
-func (ng *AlertNG) LoadAlertCondition(alertDefinitionID int64, signedInUser *models.SignedInUser, skipCache bool) (*eval.Condition, error) {
+// loadAlertCondition returns a Condition object for the given alertDefinitionID.
+func (ng *AlertNG) loadAlertCondition(alertDefinitionID int64, signedInUser *models.SignedInUser, skipCache bool) (*eval.Condition, error) {
 	alertDefinition, err := ng.getAlertDefinitionByID(alertDefinitionID)
 	if err != nil {
 		return nil, err

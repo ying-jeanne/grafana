@@ -10,7 +10,7 @@ func getAlertDefinitionByID(alertDefinitionID int64, sess *sqlstore.DBSession) (
 	alertDefinition := AlertDefinition{}
 	has, err := sess.ID(alertDefinitionID).Get(&alertDefinition)
 	if !has {
-		return nil, ErrAlertDefinitionNotFound
+		return nil, errAlertDefinitionNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -19,7 +19,7 @@ func getAlertDefinitionByID(alertDefinitionID int64, sess *sqlstore.DBSession) (
 }
 
 // deleteAlertDefinitionByID deletes an alert definition.
-// It returns models.ErrAlertDefinitionNotFound if no alert definition is found for the provided ID.
+// It returns errAlertDefinitionNotFound if no alert definition is found for the provided ID.
 func (ng *AlertNG) deleteAlertDefinitionByID(id int64) (int64, error) {
 	var rowsAffected int64
 	err := ng.SQLStore.WithTransactionalDbSession(context.Background(), func(sess *sqlstore.DBSession) error {
@@ -39,7 +39,7 @@ func (ng *AlertNG) deleteAlertDefinitionByID(id int64) (int64, error) {
 }
 
 // getAlertDefinitionByID gets an alert definition from the database by its ID.
-// It returns models.ErrAlertDefinitionNotFound if no alert definition is found for the provided ID.
+// It returns models.errAlertDefinitionNotFound if no alert definition is found for the provided ID.
 func (ng *AlertNG) getAlertDefinitionByID(id int64) (*AlertDefinition, error) {
 	var alertDefinition *AlertDefinition
 	if err := ng.SQLStore.WithTransactionalDbSession(context.Background(), func(sess *sqlstore.DBSession) error {

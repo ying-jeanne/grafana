@@ -24,7 +24,7 @@ func (ng *AlertNG) registerAPIEndpoints() {
 		alertDefinitions.Post("/eval", middleware.ReqSignedIn, binding.Bind(evalAlertConditionCommand{}), api.Wrap(ng.conditionEval))
 		alertDefinitions.Get("/:alertDefinitionId", ng.validateOrgAlertDefinition, api.Wrap(ng.getAlertDefinitionEndpoint))
 		alertDefinitions.Delete("/:alertDefinitionId", ng.validateOrgAlertDefinition, api.Wrap(ng.deleteAlertDefinitionEndpoint))
-		alertDefinitions.Post("/", middleware.ReqSignedIn, binding.Bind(SaveAlertDefinitionCommand{}), api.Wrap(ng.createAlertDefinitionEndpoint))
+		alertDefinitions.Post("/", middleware.ReqSignedIn, binding.Bind(saveAlertDefinitionCommand{}), api.Wrap(ng.createAlertDefinitionEndpoint))
 		alertDefinitions.Put("/:alertDefinitionId", ng.validateOrgAlertDefinition, binding.Bind(updateAlertDefinitionCommand{}), api.Wrap(ng.updateAlertDefinitionEndpoint))
 	})
 }
@@ -82,7 +82,7 @@ func (ng *AlertNG) alertDefinitionEval(c *models.ReqContext) api.Response {
 		toStr = "now"
 	}
 
-	conditions, err := ng.LoadAlertCondition(alertDefinitionID, c.SignedInUser, c.SkipCache)
+	conditions, err := ng.loadAlertCondition(alertDefinitionID, c.SignedInUser, c.SkipCache)
 	if err != nil {
 		return api.Error(400, "Failed to load conditions", err)
 	}
@@ -175,7 +175,7 @@ func (ng *AlertNG) updateAlertDefinitionEndpoint(c *models.ReqContext, cmd updat
 }
 
 // createAlertDefinitionEndpoint handles POST /api/alert-definitions.
-func (ng *AlertNG) createAlertDefinitionEndpoint(c *models.ReqContext, cmd SaveAlertDefinitionCommand) api.Response {
+func (ng *AlertNG) createAlertDefinitionEndpoint(c *models.ReqContext, cmd saveAlertDefinitionCommand) api.Response {
 	var alertDefinition *AlertDefinition
 	err := ng.SQLStore.WithTransactionalDbSession(context.Background(), func(sess *sqlstore.DBSession) error {
 		alertDefinition := &AlertDefinition{

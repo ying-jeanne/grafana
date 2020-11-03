@@ -17,8 +17,8 @@ type AlertDefinition struct {
 }
 
 var (
-	// ErrAlertDefinitionNotFound is an error for an unknown alert definition.
-	ErrAlertDefinitionNotFound = fmt.Errorf("could not find alert definition")
+	// errAlertDefinitionNotFound is an error for an unknown alert definition.
+	errAlertDefinitionNotFound = fmt.Errorf("could not find alert definition")
 )
 
 // condition is the structure used by storing/updating alert definition commmands
@@ -28,15 +28,15 @@ type condition struct {
 	QueriesAndExpressions []alertQuery `json:"queriesAndExpressions"`
 }
 
-// SaveAlertDefinitionCommand contains parameters for saving a new alert definition.
-type SaveAlertDefinitionCommand struct {
+// saveAlertDefinitionCommand contains parameters for saving a new alert definition.
+type saveAlertDefinitionCommand struct {
 	Name      string    `json:"name"`
 	Condition condition `json:"condition"`
 }
 
 // IsValid validates a SaveAlertDefinitionCommand.
 // Always returns true.
-func (cmd *SaveAlertDefinitionCommand) IsValid() bool {
+func (cmd *saveAlertDefinitionCommand) IsValid() bool {
 	return true
 }
 

@@ -22,7 +22,7 @@ type Condition struct {
 	QueriesAndExpressions []backend.DataQuery `json:"queriesAndExpressions"`
 }
 
-// ExecutionResults contains the unevaluated results from executing
+// executionResults contains the unevaluated results from executing
 // a condition.
 type executionResults struct {
 	AlertDefinitionID int64
