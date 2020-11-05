@@ -418,7 +418,9 @@ describe('ElasticDatasource', function(this: any) {
     });
 
     it('should return nested fields', async () => {
-      const fields = await ctx.ds.getFields();
+      const fieldObjects = await ctx.ds.getFields();
+
+      const fields = _.map(fieldObjects, 'text');
 
       expect(fields).toEqual([
         '@timestamp',
@@ -434,13 +436,17 @@ describe('ElasticDatasource', function(this: any) {
     });
 
     it('should return number fields', async () => {
-      const fields = await ctx.ds.getFields('number');
+      const fieldObjects = await ctx.ds.getFields('number');
+
+      const fields = _.map(fieldObjects, 'text');
 
       expect(fields).toEqual(['system.cpu.system', 'system.cpu.user', 'system.process.cpu.total']);
     });
 
     it('should return date fields', async () => {
-      const fields = await ctx.ds.getFields('date');
+      const fieldObjects = await ctx.ds.getFields('date');
+
+      const fields = _.map(fieldObjects, 'text');
 
       expect(fields).toEqual(['@timestamp', '__timestamp']);
     });
@@ -496,6 +502,7 @@ describe('ElasticDatasource', function(this: any) {
     });
 
     it('should return fields of the newest available index', async () => {
+      // FIXME: Double check this.
       const twoDaysBefore = toUtc()
         .subtract(2, 'day')
         .format('YYYY.MM.DD');
@@ -513,7 +520,9 @@ describe('ElasticDatasource', function(this: any) {
         return Promise.reject({ status: 404 });
       });
 
-      const fields = await ctx.ds.getFields();
+      const fieldObjects = await ctx.ds.getFields();
+
+      const fields = _.map(fieldObjects, 'text');
       expect(fields).toEqual(['@timestamp', 'beat.hostname']);
     });
 
@@ -650,7 +659,9 @@ describe('ElasticDatasource', function(this: any) {
     });
 
     it('should return nested fields', async () => {
-      const fields = await ctx.ds.getFields();
+      const fieldObjects = await ctx.ds.getFields();
+
+      const fields = _.map(fieldObjects, 'text');
 
       expect(fields).toEqual([
         '@timestamp_millis',
@@ -671,7 +682,9 @@ describe('ElasticDatasource', function(this: any) {
     });
 
     it('should return number fields', async () => {
-      const fields = await ctx.ds.getFields('number');
+      const fieldObjects = await ctx.ds.getFields('number');
+
+      const fields = _.map(fieldObjects, 'text');
 
       expect(fields).toEqual([
         'justification_blob.overall_vote_score',
@@ -684,7 +697,9 @@ describe('ElasticDatasource', function(this: any) {
     });
 
     it('should return date fields', async () => {
-      const fields = await ctx.ds.getFields('date');
+      const fieldObjects = await ctx.ds.getFields('date');
+
+      const fields = _.map(fieldObjects, 'text');
 
       expect(fields).toEqual(['@timestamp_millis']);
     });
