@@ -119,6 +119,14 @@ steps:
   - codespell
   - shellcheck
 
+- name: lighthouse
+  image: grafana/build-container:1.2.28
+  commands:
+  - lhci autorun || echo "LHCI failed!"
+  depends_on:
+  - build-backend
+  - build-frontend
+
 - name: end-to-end-tests-server
   image: grafana/build-container:1.2.28
   detach: true

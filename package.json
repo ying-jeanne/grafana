@@ -76,6 +76,7 @@
     "@grafana/api-documenter": "0.9.3",
     "@grafana/api-extractor": "7.10.1",
     "@grafana/eslint-config": "2.0.5",
+    "@lhci/cli": "^0.6.0",
     "@rtsao/plugin-proposal-class-properties": "7.0.1-patch.1",
     "@testing-library/jest-dom": "^5.11.3",
     "@testing-library/react": "^10.4.8",
@@ -288,8 +289,8 @@
     "tinycolor2": "1.4.1",
     "tti-polyfill": "0.2.2",
     "uuid": "8.3.0",
-    "whatwg-fetch": "3.1.0",
-    "visjs-network": "4.25.0"
+    "visjs-network": "4.25.0",
+    "whatwg-fetch": "3.1.0"
   },
   "resolutions": {
     "caniuse-db": "1.0.30000772"
