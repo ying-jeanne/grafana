@@ -16,6 +16,7 @@ import (
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/ldap"
 	"github.com/grafana/grafana/pkg/services/multildap"
+	"github.com/grafana/grafana/pkg/services/sqlstore"
 	"github.com/grafana/grafana/pkg/setting"
 	"github.com/grafana/grafana/pkg/util"
 )
@@ -40,10 +41,11 @@ var supportedHeaderFields = []string{"Name", "Email", "Login", "Groups"}
 
 // AuthProxy struct
 type AuthProxy struct {
-	store  *remotecache.RemoteCache
-	ctx    *models.ReqContext
-	orgID  int64
-	header string
+	cfg         *setting.Cfg
+	remoteCache *remotecache.RemoteCache
+	ctx         *models.ReqContext
+	orgID       int64
+	header      string
 
 	enabled             bool
 	LDAPAllowSignup     bool
@@ -75,28 +77,28 @@ func (err *Error) Error() string {
 
 // Options for the AuthProxy
 type Options struct {
-	Store *remotecache.RemoteCache
-	Ctx   *models.ReqContext
-	OrgID int64
+	SQLStore           *sqlstore.SQLStore
+	RemoteCacheService *remotecache.RemoteCache
+	Ctx                *models.ReqContext
+	OrgID              int64
 }
 
 // New instance of the AuthProxy
-func New(options *Options) *AuthProxy {
-	header := options.Ctx.Req.Header.Get(setting.AuthProxyHeaderName)
-
+func New(cfg *setting.Cfg, options *Options) *AuthProxy {
+	header := options.Ctx.Req.Header.Get(cfg.AuthProxyHeaderName)
 	return &AuthProxy{
-		store:  options.Store,
-		ctx:    options.Ctx,
-		orgID:  options.OrgID,
-		header: header,
-
-		enabled:             setting.AuthProxyEnabled,
-		headerType:          setting.AuthProxyHeaderProperty,
-		headers:             setting.AuthProxyHeaders,
-		whitelistIP:         setting.AuthProxyWhitelist,
-		cacheTTL:            setting.AuthProxySyncTtl,
-		LDAPAllowSignup:     setting.LDAPAllowSignup,
-		AuthProxyAutoSignUp: setting.AuthProxyAutoSignUp,
+		remoteCache:         options.RemoteCacheService,
+		cfg:                 cfg,
+		ctx:                 options.Ctx,
+		orgID:               options.OrgID,
+		header:              header,
+		enabled:             cfg.AuthProxyEnabled,
+		headerType:          cfg.AuthProxyHeaderProperty,
+		headers:             cfg.AuthProxyHeaders,
+		whitelistIP:         cfg.AuthProxyWhitelist,
+		cacheTTL:            cfg.AuthProxySyncTTL,
+		LDAPAllowSignup:     cfg.LDAPAllowSignup,
+		AuthProxyAutoSignUp: cfg.AuthProxyAutoSignUp,
 	}
 }
 
@@ -111,12 +113,12 @@ func (auth *AuthProxy) HasHeader() bool {
 	return len(auth.header) != 0
 }
 
-// IsAllowedIP compares presented IP with the whitelist one
-func (auth *AuthProxy) IsAllowedIP() (bool, *Error) {
+// IsAllowedIP compares presented IP with the whitelist one.
+func (auth *AuthProxy) IsAllowedIP() error {
 	ip := auth.ctx.Req.RemoteAddr
 
 	if len(strings.TrimSpace(auth.whitelistIP)) == 0 {
-		return true, nil
+		return nil
 	}
 
 	proxies := strings.Split(auth.whitelistIP, ",")
@@ -124,27 +126,28 @@ func (auth *AuthProxy) IsAllowedIP() (bool, *Error) {
 	for _, proxy := range proxies {
 		result, err := coerceProxyAddress(proxy)
 		if err != nil {
-			return false, newError("Could not get the network", err)
+			return err
 		}
 
 		proxyObjs = append(proxyObjs, result)
 	}
 
-	sourceIP, _, _ := net.SplitHostPort(ip)
+	sourceIP, _, err := net.SplitHostPort(ip)
+	if err != nil {
+		return err
+	}
 	sourceObj := net.ParseIP(sourceIP)
 
 	for _, proxyObj := range proxyObjs {
 		if proxyObj.Contains(sourceObj) {
-			return true, nil
+			return nil
 		}
 	}
 
-	err := fmt.Errorf(
+	return fmt.Errorf(
 		"request for user (%s) from %s is not from the authentication proxy", auth.header,
 		sourceIP,
 	)
-
-	return false, newError("Proxy authentication required", err)
 }
 
 func HashCacheKey(key string) string {
@@ -202,7 +205,7 @@ func (auth *AuthProxy) Login(logger log.Logger, ignoreCache bool) (int64, *Error
 func (auth *AuthProxy) GetUserViaCache(logger log.Logger) (int64, error) {
 	cacheKey := auth.getKey()
 	logger.Debug("Getting user ID via auth cache", "cacheKey", cacheKey)
-	userID, err := auth.store.Get(cacheKey)
+	userID, err := auth.remoteCache.Get(cacheKey)
 	if err != nil {
 		logger.Debug("Failed getting user ID via auth cache", "error", err)
 		return 0, err
@@ -216,7 +219,7 @@ func (auth *AuthProxy) GetUserViaCache(logger log.Logger) (int64, error) {
 func (auth *AuthProxy) RemoveUserFromCache(logger log.Logger) error {
 	cacheKey := auth.getKey()
 	logger.Debug("Removing user from auth cache", "cacheKey", cacheKey)
-	if err := auth.store.Delete(cacheKey); err != nil {
+	if err := auth.remoteCache.Delete(cacheKey); err != nil {
 		return err
 	}
 
@@ -282,7 +285,7 @@ func (auth *AuthProxy) LoginViaHeader() (int64, error) {
 
 	upsert := &models.UpsertUserCommand{
 		ReqContext:    auth.ctx,
-		SignupAllowed: setting.AuthProxyAutoSignUp,
+		SignupAllowed: auth.cfg.AuthProxyAutoSignUp,
 		ExternalUser:  extUser,
 	}
 
@@ -309,8 +312,8 @@ func (auth *AuthProxy) headersIterator(fn func(field string, header string)) {
 	}
 }
 
-// GetSignedUser gets full signed user info.
-func (auth *AuthProxy) GetSignedUser(userID int64) (*models.SignedInUser, *Error) {
+// GetSignedUser gets full signed in user info.
+func (auth *AuthProxy) GetSignedInUser(userID int64) (*models.SignedInUser, *Error) {
 	query := &models.GetSignedInUserQuery{
 		OrgId:  auth.orgID,
 		UserId: userID,
@@ -328,14 +331,14 @@ func (auth *AuthProxy) Remember(id int64) *Error {
 	key := auth.getKey()
 
 	// Check if user already in cache
-	userID, _ := auth.store.Get(key)
+	userID, _ := auth.remoteCache.Get(key)
 	if userID != nil {
 		return nil
 	}
 
 	expiration := time.Duration(auth.cacheTTL) * time.Minute
 
-	err := auth.store.Set(key, id, expiration)
+	err := auth.remoteCache.Set(key, id, expiration)
 	if err != nil {
 		return newError(err.Error(), nil)
 	}
@@ -351,5 +354,8 @@ func coerceProxyAddress(proxyAddr string) (*net.IPNet, error) {
 	}
 
 	_, network, err := net.ParseCIDR(proxyAddr)
-	return network, err
+	if err != nil {
+		return nil, fmt.Errorf("could not parse the network: %w", err)
+	}
+	return network, nil
 }

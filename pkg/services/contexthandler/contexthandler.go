@@ -4,6 +4,7 @@ package contexthandler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -13,11 +14,12 @@ import (
 	"github.com/grafana/grafana/pkg/infra/log"
 	"github.com/grafana/grafana/pkg/infra/remotecache"
 	"github.com/grafana/grafana/pkg/middleware"
-	authproxy "github.com/grafana/grafana/pkg/middleware/auth_proxy"
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/registry"
+	"github.com/grafana/grafana/pkg/services/contexthandler/authproxy"
 	"github.com/grafana/grafana/pkg/services/login"
 	"github.com/grafana/grafana/pkg/services/rendering"
+	"github.com/grafana/grafana/pkg/services/sqlstore"
 	"github.com/grafana/grafana/pkg/setting"
 	"github.com/grafana/grafana/pkg/util"
 	"gopkg.in/macaron.v1"
@@ -30,9 +32,11 @@ const (
 
 var getTime = time.Now
 
+const serviceName = "ContextHandler"
+
 func init() {
 	registry.Register(&registry.Descriptor{
-		Name:         "ContextHandler",
+		Name:         serviceName,
 		Instance:     &ContextHandler{},
 		InitPriority: registry.High,
 	})
@@ -44,6 +48,7 @@ type ContextHandler struct {
 	AuthTokenService   models.UserTokenService  `inject:""`
 	RemoteCacheService *remotecache.RemoteCache `inject:""`
 	RenderService      rendering.Service        `inject:""`
+	SQLStore           *sqlstore.SQLStore       `inject:""`
 }
 
 // Init initializes the service.
@@ -329,44 +334,48 @@ func logUserIn(auth *authproxy.AuthProxy, username string, logger log.Logger, ig
 
 func (h *ContextHandler) initContextWithAuthProxy(ctx *models.ReqContext, orgID int64) bool {
 	username := ctx.Req.Header.Get(h.Cfg.AuthProxyHeaderName)
-	auth := authproxy.New(&authproxy.Options{
-		Store: h.RemoteCacheService,
-		Ctx:   ctx,
-		OrgID: orgID,
+	auth := authproxy.New(h.Cfg, &authproxy.Options{
+		SQLStore:           h.SQLStore,
+		RemoteCacheService: h.RemoteCacheService,
+		Ctx:                ctx,
+		OrgID:              orgID,
 	})
 
 	logger := log.New("auth.proxy")
 
 	// Bail if auth proxy is not enabled
 	if !auth.IsEnabled() {
+		fmt.Printf("Not enabled\n")
 		return false
 	}
 
 	// If there is no header - we can't move forward
 	if !auth.HasHeader() {
+		fmt.Printf("No header\n")
 		return false
 	}
 
 	// Check if allowed to continue with this IP
-	if result, err := auth.IsAllowedIP(); !result {
+	if err := auth.IsAllowedIP(); err != nil {
+		fmt.Printf("Not allowed IP\n")
 		logger.Error(
 			"Failed to check whitelisted IP addresses",
-			"message", err.Error(),
-			"error", err.DetailsError,
+			"error", err,
 		)
-		ctx.Handle(407, err.Error(), err.DetailsError)
+		ctx.Handle(407, "Couldn't determine if IP is allowed", err)
 		return true
 	}
 
 	id, err := logUserIn(auth, username, logger, false)
 	if err != nil {
-		ctx.Handle(407, err.Error(), err.DetailsError)
+		fmt.Printf("Couldn't log user in\n")
+		ctx.Handle(407, "Couldn't log user in", err.DetailsError)
 		return true
 	}
 
 	logger.Debug("Got user ID, getting full user info", "userID", id)
 
-	user, err := auth.GetSignedUser(id)
+	user, err := auth.GetSignedInUser(id)
 	if err != nil {
 		// The reason we couldn't find the user corresponding to the ID might be that the ID was found from a stale
 		// cache entry. For example, if a user is deleted via the API, corresponding cache entries aren't invalidated
@@ -385,7 +394,7 @@ func (h *ContextHandler) initContextWithAuthProxy(ctx *models.ReqContext, orgID 
 			return true
 		}
 
-		user, err = auth.GetSignedUser(id)
+		user, err = auth.GetSignedInUser(id)
 		if err != nil {
 			ctx.Handle(407, err.Error(), err.DetailsError)
 			return true
