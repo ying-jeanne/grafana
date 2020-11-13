@@ -66,3 +66,93 @@ export interface PlotProps {
   /** Callback performed when uPlot is (re)initialized */
   onPlotInit?: () => {};
 }
+
+export class UPlotChartConfig {
+  private axes: UPlotChartAxis[] = [];
+  private scales: UPlotChartScale[] = [];
+  private series: UPlotChartSeries[] = [];
+
+  public addAxis(props: UPlotChartAxisProps) {
+    this.axes.push(new UPlotChartAxis(props));
+  }
+
+  public addSeries(props: UPlotSeriesProps) {
+    this.series.push(new UPlotChartSeries(props));
+  }
+
+  public addScale(props: UPlotScaleProps) {
+    this.scales.push(new UPlotChartScale(props));
+  }
+
+  public hasScale(key: string) {
+    return false;
+  }
+
+  getConfig() {}
+}
+
+export interface UPlotChartAxisProps {
+  scaleKey: string;
+  label?: string;
+  show?: boolean;
+  size?: number;
+  stroke?: string;
+  grid?: boolean;
+  formatValue?: (v: any) => string;
+  values?: any;
+  isTime?: boolean;
+  timeZone?: TimeZone;
+}
+
+export class UPlotChartAxis {
+  constructor(private props: UPlotChartAxisProps) {}
+
+  getConfig(): uPlot.Axis {
+    return {};
+  }
+}
+
+export interface UPlotChartAxisProps {
+  scaleKey: string;
+  label?: string;
+  show?: boolean;
+  size?: number;
+  stroke?: string;
+  grid?: boolean;
+  formatValue?: (v: any) => string;
+  values?: any;
+  isTime?: boolean;
+  timeZone?: TimeZone;
+  side: AxisSide;
+}
+
+export interface UPlotScaleProps {
+  scaleKey: string;
+  isTime?: boolean;
+}
+
+export class UPlotChartScale {
+  constructor(private props: UPlotScaleProps) {}
+
+  getConfig(): uPlot.Scale {
+    return {};
+  }
+}
+
+interface UPlotSeriesProps {
+  lines?: boolean;
+  lineWidth?: number;
+  areaFill?: number;
+  points?: boolean;
+  pointSize?: number;
+  color?: string;
+  scaleKey: string;
+}
+
+export class UPlotChartSeries {
+  constructor(private props: UPlotSeriesProps) {}
+
+  getConfig(): uPlot.Scale {
+    return {};
+  }
+}

@@ -10,9 +10,8 @@ import {
   TIME_SERIES_TIME_FIELD_NAME,
 } from '@grafana/data';
 import { alignAndSortDataFramesByFieldName } from './utils';
-import { Area, Axis, Line, Point, Scale, SeriesGeometry } from '../uPlot/geometries';
 import { UPlotChart } from '../uPlot/Plot';
-import { AxisSide, GraphCustomFieldConfig, PlotProps } from '../uPlot/types';
+import { AxisSide, GraphCustomFieldConfig, PlotProps, UPlotChartConfig } from '../uPlot/types';
 import { useTheme } from '../../themes';
 import { VizLayout } from '../VizLayout/VizLayout';
 import { LegendItem, LegendOptions } from '../Legend/Legend';
@@ -46,116 +45,67 @@ export const GraphNG: React.FC<GraphNGProps> = ({
     );
   }
 
-  const geometries: React.ReactNode[] = [];
-  const scales: React.ReactNode[] = [];
-  const axes: React.ReactNode[] = [];
+  const plotConfig = useMemo(() => {
+    const plotConfig = new UPlotChartConfig();
 
-  let { timeIndex } = getTimeField(alignedData);
-  if (timeIndex === undefined) {
-    timeIndex = 0; // assuming first field represents x-domain
-    scales.push(<Scale key="scale-x" scaleKey="x" />);
-  } else {
-    scales.push(<Scale key="scale-x" scaleKey="x" isTime />);
-  }
-
-  axes.push(<Axis key="axis-scale-x" scaleKey="x" isTime side={AxisSide.Bottom} timeZone={timeZone} />);
-
-  let seriesIdx = 0;
-  const legendItems: LegendItem[] = [];
-  const uniqueScales: Record<string, boolean> = {};
-
-  for (let i = 0; i < alignedData.fields.length; i++) {
-    const seriesGeometry = [];
-    const field = alignedData.fields[i];
-    const config = field.config as FieldConfig<GraphCustomFieldConfig>;
-    const customConfig = config.custom;
-
-    if (i === timeIndex || field.type !== FieldType.number) {
-      continue;
-    }
-
-    const fmt = field.display ?? defaultFormatter;
-    const scale = config.unit || '__fixed';
-
-    if (!uniqueScales[scale]) {
-      uniqueScales[scale] = true;
-      scales.push(<Scale key={`scale-${scale}`} scaleKey={scale} />);
-      axes.push(
-        <Axis
-          key={`axis-${scale}-${i}`}
-          scaleKey={scale}
-          label={config.custom?.axis?.label}
-          size={config.custom?.axis?.width}
-          side={config.custom?.axis?.side || AxisSide.Left}
-          grid={config.custom?.axis?.grid}
-          formatValue={v => formattedValueToString(fmt(v))}
-        />
-      );
-    }
-
-    // need to update field state here because we use a transform to merge framesP
-    field.state = { ...field.state, seriesIndex: seriesIdx };
-
-    const colorMode = getFieldColorModeForField(field);
-    const seriesColor = colorMode.getCalculator(field, theme)(0, 0);
-
-    if (customConfig?.line?.show) {
-      seriesGeometry.push(
-        <Line
-          key={`line-${scale}-${i}`}
-          scaleKey={scale}
-          stroke={seriesColor}
-          width={customConfig?.line.show ? customConfig?.line.width || 1 : 0}
-        />
-      );
-    }
-
-    if (customConfig?.points?.show) {
-      seriesGeometry.push(
-        <Point key={`point-${scale}-${i}`} scaleKey={scale} size={customConfig?.points?.radius} stroke={seriesColor} />
-      );
-    }
-
-    if (customConfig?.fill?.alpha) {
-      seriesGeometry.push(
-        <Area key={`area-${scale}-${i}`} scaleKey={scale} fill={customConfig?.fill.alpha} color={seriesColor} />
-      );
-    }
-
-    if (seriesGeometry.length > 1) {
-      geometries.push(
-        <SeriesGeometry key={`seriesGeometry-${scale}-${i}`} scaleKey={scale}>
-          {seriesGeometry}
-        </SeriesGeometry>
-      );
+    let { timeIndex } = getTimeField(alignedData);
+    if (timeIndex === undefined) {
+      timeIndex = 0; // assuming first field represents x-domain
+      plotConfig.addScale({ scaleKey: 'x' });
     } else {
-      geometries.push(seriesGeometry);
+      plotConfig.addScale({ scaleKey: 'x', isTime: true });
     }
 
-    if (legend?.isVisible) {
-      legendItems.push({
+    plotConfig.addAxis({ scaleKey: 'x', isTime: true, side: AxisSide.Bottom, timeZone: timeZone });
+
+    let seriesIdx = 0;
+
+    for (let i = 0; i < alignedData.fields.length; i++) {
+      const field = alignedData.fields[i];
+      const config = field.config as FieldConfig<GraphCustomFieldConfig>;
+      const customConfig = config.custom;
+
+      if (i === timeIndex || field.type !== FieldType.number) {
+        continue;
+      }
+
+      const fmt = field.display ?? defaultFormatter;
+      const scale = config.unit || '__fixed';
+
+      if (!plotConfig.hasScale(scale)) {
+        plotConfig.addScale({ scaleKey: scale });
+        plotConfig.addAxis({
+          scaleKey: scale,
+          label: config.custom?.axis?.label,
+          size: config.custom?.axis?.width,
+          side: config.custom?.axis?.side || AxisSide.Left,
+          grid: config.custom?.axis?.grid,
+          formatValue: v => formattedValueToString(fmt(v)),
+        });
+      }
+
+      // need to update field state here because we use a transform to merge framesP
+      field.state = { ...field.state, seriesIndex: seriesIdx };
+
+      const colorMode = getFieldColorModeForField(field);
+      const seriesColor = colorMode.getCalculator(field, theme)(0, 0);
+
+      plotConfig.addSeries({
+        lines: customConfig?.line?.show,
+        scaleKey: scale,
         color: seriesColor,
-        label: getFieldDisplayName(field, alignedData),
-        isVisible: true,
-        yAxis: customConfig?.axis?.side === 1 ? 3 : 1,
+        lineWidth: customConfig?.line.show ? customConfig?.line.width || 1 : 0,
+        points: customConfig?.points?.show,
+        pointSize: customConfig?.points?.radius,
+        areaFill: customConfig?.fill.alpha,
       });
+
+      seriesIdx++;
     }
-
-    seriesIdx++;
-  }
-
-  let legendElement: React.ReactElement | undefined;
-
-  if (legend?.isVisible && legendItems.length > 0) {
-    legendElement = (
-      <VizLayout.Legend position={legend.placement} maxHeight="35%" maxWidth="60%">
-        <GraphLegend placement={legend.placement} items={legendItems} displayMode={legend.displayMode} />
-      </VizLayout.Legend>
-    );
-  }
+  }, [alignedData]);
 
   return (
-    <VizLayout width={width} height={height} legend={legendElement}>
+    <VizLayout width={width} height={height}>
       {(vizWidth: number, vizHeight: number) => (
         <UPlotChart
           data={alignedData}
@@ -163,6 +113,7 @@ export const GraphNG: React.FC<GraphNGProps> = ({
           height={vizHeight}
           timeRange={timeRange}
           timeZone={timeZone}
+          config={plotConfig}
           {...plotProps}
         >
           {scales}
