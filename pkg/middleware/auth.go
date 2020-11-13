@@ -9,28 +9,11 @@ import (
 
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/setting"
-	"github.com/grafana/grafana/pkg/util"
 )
 
 type AuthOptions struct {
 	ReqGrafanaAdmin bool
 	ReqSignedIn     bool
-}
-
-func getApiKey(c *models.ReqContext) string {
-	header := c.Req.Header.Get("Authorization")
-	parts := strings.SplitN(header, " ", 2)
-	if len(parts) == 2 && parts[0] == "Bearer" {
-		key := parts[1]
-		return key
-	}
-
-	username, password, err := util.DecodeBasicAuthHeader(header)
-	if err == nil && username == "api_key" {
-		return password
-	}
-
-	return ""
 }
 
 func accessForbidden(c *models.ReqContext) {
@@ -58,7 +41,7 @@ func notAuthorized(c *models.ReqContext) {
 		params := parsed.Query()
 		params.Del("forceLogin")
 		parsed.RawQuery = params.Encode()
-		WriteCookie(c.Resp, "redirect_to", url.QueryEscape(parsed.String()), 0, newCookieOptions)
+		WriteCookie(c.Resp, "redirect_to", url.QueryEscape(parsed.String()), 0, nil)
 	} else {
 		c.Logger.Debug("Failed parsing request URI; redirect cookie will not be set", "redirectTo", redirectTo, "error", err)
 	}

@@ -253,7 +253,7 @@ func (hs *HTTPServer) loginUserWithUser(user *models.User, c *models.ReqContext)
 	}
 
 	hs.log.Info("Successful Login", "User", user.Email)
-	middleware.WriteSessionCookie(c, userToken.UnhashedToken, hs.Cfg.LoginMaxLifetime)
+	middleware.WriteSessionCookie(c, hs.Cfg, userToken.UnhashedToken, hs.Cfg.LoginMaxLifetime)
 	return nil
 }
 
@@ -267,7 +267,7 @@ func (hs *HTTPServer) Logout(c *models.ReqContext) {
 		hs.log.Error("failed to revoke auth token", "error", err)
 	}
 
-	middleware.WriteSessionCookie(c, "", -1)
+	middleware.WriteSessionCookie(c, hs.Cfg, "", -1)
 
 	if setting.SignoutRedirectUrl != "" {
 		c.Redirect(setting.SignoutRedirectUrl)

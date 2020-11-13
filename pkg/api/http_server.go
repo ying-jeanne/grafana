@@ -28,6 +28,7 @@ import (
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/plugins"
 	"github.com/grafana/grafana/pkg/registry"
+	"github.com/grafana/grafana/pkg/services/contexthandler"
 	"github.com/grafana/grafana/pkg/services/datasources"
 	"github.com/grafana/grafana/pkg/services/hooks"
 	"github.com/grafana/grafana/pkg/services/login"
@@ -74,6 +75,7 @@ type HTTPServer struct {
 	SearchService        *search.SearchService            `inject:""`
 	ShortURLService      *shorturls.ShortURLService       `inject:""`
 	Live                 *live.GrafanaLive                `inject:""`
+	ContextHandler       *contexthandler.ContextHandler   `inject:""`
 	Listener             net.Listener
 }
 
@@ -332,11 +334,7 @@ func (hs *HTTPServer) addMiddlewaresAndStaticRoutes() {
 	m.Use(hs.apiHealthHandler)
 	m.Use(hs.metricsEndpoint)
 
-	m.Use(middleware.GetContextHandler(
-		hs.AuthTokenService,
-		hs.RemoteCacheService,
-		hs.RenderService,
-	))
+	m.Use(hs.ContextHandler.Middleware)
 	m.Use(middleware.OrgRedirect())
 
 	// needs to be after context handler
