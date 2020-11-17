@@ -147,6 +147,7 @@ func (b *InProcBus) Publish(msg Msg) error {
 			if ok {
 				return err
 			}
+			return fmt.Errorf("expected listener to return an error, got '%T'", e)
 		}
 	}
 
