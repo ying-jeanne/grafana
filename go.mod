@@ -50,7 +50,7 @@ require (
 	github.com/hashicorp/go-plugin v1.4.0
 	github.com/hashicorp/go-version v1.2.1
 	github.com/inconshreveable/log15 v0.0.0-20180818164646-67afb5ed74ec
-	github.com/influxdata/influxdb-client-go/v2 v2.2.0
+	github.com/influxdata/influxdb-client-go/v2 v2.4.0
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/json-iterator/go v1.1.10
@@ -80,12 +80,11 @@ require (
 	github.com/weaveworks/common v0.0.0-20201119133501-0619918236ec
 	github.com/xorcare/pointer v1.1.0
 	github.com/yudai/gojsondiff v1.0.0
-	golang.org/x/crypto v0.0.0-20201208171446-5f87f3452ae9
-	golang.org/x/net v0.0.0-20201022231255-08b38378de70
+	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
+	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
 	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
-	golang.org/x/sys v0.0.0-20201022201747-fb209a7c41cd // indirect
-	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
+	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 	gonum.org/v1/gonum v0.6.0
 	google.golang.org/api v0.33.0
 	google.golang.org/appengine v1.6.7 // indirect
